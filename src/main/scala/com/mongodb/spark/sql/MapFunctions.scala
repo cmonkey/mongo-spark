@@ -17,7 +17,7 @@
 package com.mongodb.spark.sql
 
 import java.sql.{Date, Timestamp}
-
+import java.time.Instant
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 import org.apache.spark.sql.Row
@@ -213,10 +213,41 @@ private[spark] object MapFunctions {
       case (isBsonNumber(), _) if elementType.typeName.startsWith("decimal") => toDecimal(element)
       case (notNull(), schema: StructType) => castToStructType(element, schema)
       case (_, StringType) => bsonValueToString(element)
-      case (BsonType.STRING, DoubleType) => toDouble(element)
-      case (BsonType.STRING, TimestampType) => new Timestamp(element.asDateTime().getValue)
+      case (BsonType.STRING, DoubleType) => {
+        println(s"call string to double by element = $element $elementType")
+        try {
+          toDouble(element)
+        } catch {
+          case throwable: Throwable => {
+            println("catch throwable on 0.0")
+            0.0d
+          }
+        }
+      }
+      case (BsonType.STRING, TimestampType) => {
+        println(s"call string to timestamp by element = $element $elementType")
+        try {
+          new Timestamp(element.asDateTime().getValue)
+        } catch {
+          case throwable: Throwable => {
+            println("catch throwable on Instant.now")
+            Timestamp.from(Instant.now())
+          }
+        }
+      }
       case (BsonType.STRING, NullType) => {
+        println(s"call string to null by element $element $elementType")
         bsonValueToString(element)
+      }
+      case (BsonType.DATE_TIME, NullType) => {
+        try {
+          new Date(element.asDateTime().getValue)
+        } catch {
+          case throwable: Throwable => {
+            println("catch throwable on Date")
+            new Date(Instant.now().getEpochSecond() * 1000)
+          }
+        }
       }
       case _ =>
         if (element.isNull) {
