@@ -38,7 +38,7 @@ object Publish {
 
   def settings: Seq[Def.Setting[_]] = {
     val defaults = Seq(
-        publishArtifact in packageDoc := true,
+        publishArtifact in packageDoc := false,
         sources in (Compile,doc) := publishDocSrcs(scalaVersion.value, (sources in (Compile,doc)).value),
         pomPostProcess := { (node: xml.Node) =>
           new RuleTransformer(new RewriteRule {
